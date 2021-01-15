@@ -97,6 +97,38 @@ class Player:
         if keys[pygame.K_RIGHT]:
             self.angle += 0.02
             
+
+class Sprites:
+    """Здесь хранятся типы и карта спрайтов"""
+
+    def __init__(self):
+        #  типы спрайтов
+        self.sprite_types = {
+            'barrel': pygame.image.load('sprites/barrel/0.png').convert_alpha(),
+            'pedestal': pygame.image.load('sprites/pedestal/0.png').convert_alpha(),
+            'devil': [pygame.image.load(f'sprites/devil/{i}.png').convert_alpha() for i in range(8)]
+        }            
+ 
+
+class SpriteObject:
+    def __init__(self, object, static, pos, shift, scale):
+        """ object - тип
+            static - является ли он статичной картинкой без угла обзора или нет
+            pos - его положение
+            sdvig - сдвиг по вертикали
+            scale - масштабирование
+            """
+        self.object = object
+        self.static = static
+        #  координаты спрайта задаем в системе координат карты, на случай изменения расширения проекта
+        self.pos = self.x, self.y = pos[0] * razmer, pos[1] * razmer
+        self.shift = sdvig
+        #  на тот случай, если придется масштабировать картинку
+        self.scale = scale
+        #
+        if not static:
+            
+
             
 def mapping(a, b):
     return (a // razmer) * razmer, (b // razmer) * razmer
