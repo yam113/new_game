@@ -104,17 +104,18 @@ def ray_casting(screen, player):
     for _ in range(kol_luchei):
         sin_a = math.sin(angle)
         cos_a = math.cos(angle)
-        '''for i in range(dalnost_prorisovki):
-            x = ox + i * cos_a
-            y = oy + i * sin_a
-            if (x // razmer * razmer, y // razmer * razmer) in world_map:
-                i *= math.cos(player.angle - angle)
-                proj_height = min(proj_coeff / (i + 0.0001), height)
-                c = 255 / (1 + i * i * 0.0001)
-                color = (c, c, c)
-                pygame.draw.rect(screen, color, (_ * SCALE, polovina_height - proj_height // 2, SCALE, proj_height))
+        
+        # вертикаль
+        x, dx = (xm + razmer, 1) if cos_a >= 0 else (xm, -1)
+        for i in range(0, width, razmer):
+            depth_v = (x - ox) / cos_a
+            yv = oy + depth_v * sin_a
+            tile_v = mapping(x + dx, yv)
+            if tile_v in world_map:
+                texture_v = world_map[tile_v]
                 break
-        angle += ugol_mezhdu_luchami'''
+            x += dx * razmer
+
         
       
 class Drawing:
