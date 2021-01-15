@@ -115,8 +115,18 @@ def ray_casting(screen, player):
                 texture_v = world_map[tile_v]
                 break
             x += dx * razmer
+            
+        # горизонтально
+        y, dy = (ym + razmer, 1) if sin_a >= 0 else (ym, -1)
+        for i in range(0, height, razmer):
+            depth_h = (y - oy) / sin_a
+            xh = ox + depth_h * cos_a
+            tile_h = mapping(xh, y + dy)
+            if tile_h in world_map:
+                texture_h = world_map[tile_h]
+                break
+            y += dy * razmer
 
-        
       
 class Drawing:
     def __init__(self, screen):
