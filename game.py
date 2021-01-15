@@ -10,6 +10,16 @@ fps = 60
 razmer = 100
 FPS_POS = (width - 65, 5)
 
+# настройки отрисовки
+oblast_vid = math.pi / 3
+HALF_FOV = oblast_vid / 2
+kol_luchei = 300
+dalnost_prorisovki = 800
+ugol_mezhdu_luchami = oblast_vid / kol_luchei
+dist = kol_luchei / (2 * math.tan(HALF_FOV))
+proj_coeff = 3 * dist * razmer
+SCALE = width // kol_luchei
+
 #  настройки игрока
 position_for_player = (polovina_width // 4, polovina_height - 50)  # начальное положение игрока
 vzglyad_for_player = 0  # направление взгляда игрока
@@ -81,6 +91,26 @@ class Player:
             self.angle -= 0.02
         if keys[pygame.K_RIGHT]:
             self.angle += 0.02
+            
+
+def ray_casting(screen, player):
+    ox, oy = player.pos
+    angle = player.angle - HALF_FOV
+    for _ in range(kol_luchei):
+        sin_a = math.sin(angle)
+        cos_a = math.cos(angle)
+        for i in range(dalnost_prorisovki):
+            x = ox + i * cos_a
+            y = oy + i * sin_a
+            if (x // razmer * razmer, y // razmer * razmer) in world_map:
+                i *= math.cos(player.angle - angle)
+                proj_height = min(proj_coeff / (i + 0.0001), height)
+                c = 255 / (1 + i * i * 0.0001)
+                color = (c, c, c)
+                pygame.draw.rect(screen, color, (_ * SCALE, polovina_height - proj_height // 2, SCALE, proj_height))
+                break
+        angle += ugol_mezhdu_luchami
+        
 
 pygame.init()
 screen = pygame.display.set_mode((width, height))
@@ -93,10 +123,7 @@ while True:
             exit()
     
     player.movement()
-    screen.fill(chern) # вся поверхность в черный
+    screen.fill(chern) # вся поверхность в черныq
+    ray_casting(screen, player)
     
-    pygame.draw.circle(screen, zelenui, (int(player.x), int(player.y)), 10)
-    for x, y in world_map:
-        pygame.draw.rect(screen, temno_serui, (x, y, razmer, razmer), 2)
     pygame.display.flip()
-    clock.tick(fps)
