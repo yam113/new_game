@@ -92,14 +92,19 @@ class Player:
         if keys[pygame.K_RIGHT]:
             self.angle += 0.02
             
-
+            
+def mapping(a, b):
+    return (a // razmer) * razmer, (b // razmer) * razmer
+            
+            
 def ray_casting(screen, player):
     ox, oy = player.pos
+    xm, ym = mapping(ox, oy)
     angle = player.angle - HALF_FOV
     for _ in range(kol_luchei):
         sin_a = math.sin(angle)
         cos_a = math.cos(angle)
-        for i in range(dalnost_prorisovki):
+        '''for i in range(dalnost_prorisovki):
             x = ox + i * cos_a
             y = oy + i * sin_a
             if (x // razmer * razmer, y // razmer * razmer) in world_map:
@@ -109,21 +114,34 @@ def ray_casting(screen, player):
                 color = (c, c, c)
                 pygame.draw.rect(screen, color, (_ * SCALE, polovina_height - proj_height // 2, SCALE, proj_height))
                 break
-        angle += ugol_mezhdu_luchami
+        angle += ugol_mezhdu_luchami'''
+        
+      
+class Drawing:
+    def __init__(self, screen):
+        self.sc = screen
+        self.sc_map = sc_map
+
+    def background(self):
+        pygame.draw.rect(self.sc, biruzovui, (0, 0, width, polovina_height))
+        pygame.draw.rect(self.sc, temno_serui, (0, polovina_height, width, polovina_height))
+
+    def world(self, player):
+        ray_casting(self.sc, player)
         
 
 pygame.init()
 screen = pygame.display.set_mode((width, height))
 
+drawing = Drawing(screen)
 player = Player()
 
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit()
-    
     player.movement()
-    screen.fill(chern) # вся поверхность в черныq
-    ray_casting(screen, player)
-    
+    screen.fill(chern) # вся поверхность в черный
+    drawing.background
+    drawing.world(player)
     pygame.display.flip()
