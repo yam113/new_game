@@ -126,12 +126,21 @@ def ray_casting(screen, player):
                 texture_h = world_map[tile_h]
                 break
             y += dy * razmer
+            
+        # проекция
+        i = depth_v if depth_v < depth_h else depth_h
+        i *= math.cos(player.angle - angle)
+        proj_height = min(proj_coeff / (i + 0.0001), height)
+        c = 255 / (1 + i * i * 0.0001)
+        color = (c, c, c)
+        pygame.draw.rect(screen, color, (_ * SCALE, polovina_height - proj_height // 2, SCALE, proj_height))
+        angle += ugol_mezhdu_luchami
 
       
 class Drawing:
     def __init__(self, screen):
         self.sc = screen
-        self.sc_map = sc_map
+        self.sc_map = world_map
 
     def background(self):
         pygame.draw.rect(self.sc, biruzovui, (0, 0, width, polovina_height))
@@ -153,6 +162,6 @@ while True:
             exit()
     player.movement()
     screen.fill(chern) # вся поверхность в черный
-    drawing.background
+    drawing.background()
     drawing.world(player)
     pygame.display.flip()
