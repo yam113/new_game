@@ -133,10 +133,17 @@ def ray_casting(screen, player, textures):
             y += dy * razmer
             
         # проекция
-        i, o = (depth_v, yv) if depth_v < depth_h else (depth_h, xh)
-        o = int(offset) % razmer
+        i, offset, texture = (depth_v, yv, texture_v) if depth_v < depth_h else (depth_h, xh, texture_h)
+        offset = int(offset) % razmer
         i *= math.cos(player.angle - angle)
         proj_height = min(proj_coeff / (i + 0.0001), height)
+        
+        wall_column = textures[texture].subsurface(offset * texture_scale, 0, texture_scale, texture_height)
+        wall_column = pygame.transform.scale(wall_column, (SCALE, proj_height))
+        #  Позиция стены
+        wall_pos = (_ * SCALE, polovina_height - proj_height // 2)
+        #  Добавялем стены
+        walls.append((depth, wall_column, wall_pos))
         angle += ugol_mezhdu_luchami
 
       
@@ -149,8 +156,11 @@ class Drawing:
                          'S': pygame.image.load('img/sky3.png').convert()
                          }
 
-    def background(self):
-        pygame.draw.rect(self.sc, biruzovui, (0, 0, width, polovina_height))
+    def background(self, angle):
+        sky_offset = -10 * math.degrees(angle) % width
+        self.sc.blit(self.textures['S'], (sky_offset, 0))
+        self.sc.blit(self.textures['S'], (sky_offset - width, 0))
+        self.sc.blit(self.textures['S'], (sky_offset + width, 0))
         pygame.draw.rect(self.sc, temno_serui, (0, polovina_height, width, polovina_height))
 
     def world(self, player):
@@ -169,6 +179,6 @@ while True:
             exit()
     player.movement()
     screen.fill(chern) # вся поверхность в черный
-    drawing.background()
+    drawing.background(player.angle)
     drawing.world(player)
     pygame.display.flip()
