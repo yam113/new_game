@@ -29,6 +29,27 @@ pesok = (244, 164, 96)
 temno_korichnevui = (97, 61, 25)
 temno_oranzhevui = (255, 140, 0)
 
+
+text_map = [
+    '111111111111',
+    '1.....2....1',
+    '1.22.....2.1',
+    '1..........1',
+    '1.22.......1',
+    '1.2......2.1',
+    '1.....2....1',
+    '111111111111'
+]
+
+world_map = {}
+for j, row in enumerate(text_map):
+    for i, char in enumerate(row):
+        if char == '1':
+            world_map[(i * razmer, j * razmer)] = '1'
+        elif char == '2':
+            world_map[(i * razmer, j * razmer)] = '2'
+
+
 class Player:
     def __init__(self):
         self.x, self.y = position_for_player
@@ -74,7 +95,8 @@ while True:
     player.movement()
     screen.fill(chern) # вся поверхность в черный
     
-    pygame.draw.circle(screen, zelenui, position_for_player, 10)
-    
+    pygame.draw.circle(screen, zelenui, (int(player.x), int(player.y)), 10)
+    for x, y in world_map:
+        pygame.draw.rect(screen, temno_serui, (x, y, razmer, razmer), 2)
     pygame.display.flip()
     clock.tick(fps)
