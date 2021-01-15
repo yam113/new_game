@@ -20,6 +20,11 @@ dist = kol_luchei / (2 * math.tan(HALF_FOV))
 proj_coeff = 3 * dist * razmer
 SCALE = width // kol_luchei
 
+# настройки текстур
+texture_width = 1200
+texture_height = 1200
+texture_scale = texture_width // razmer
+
 #  настройки игрока
 position_for_player = (polovina_width // 4, polovina_height - 50)  # начальное положение игрока
 vzglyad_for_player = 0  # направление взгляда игрока
@@ -97,7 +102,7 @@ def mapping(a, b):
     return (a // razmer) * razmer, (b // razmer) * razmer
             
             
-def ray_casting(screen, player):
+def ray_casting(screen, player, textures):
     ox, oy = player.pos
     xm, ym = mapping(ox, oy)
     angle = player.angle - HALF_FOV
@@ -128,12 +133,10 @@ def ray_casting(screen, player):
             y += dy * razmer
             
         # проекция
-        i = depth_v if depth_v < depth_h else depth_h
+        i, o = (depth_v, yv) if depth_v < depth_h else (depth_h, xh)
+        o = int(offset) % razmer
         i *= math.cos(player.angle - angle)
         proj_height = min(proj_coeff / (i + 0.0001), height)
-        c = 255 / (1 + i * i * 0.0001)
-        color = (c, c, c)
-        pygame.draw.rect(screen, color, (_ * SCALE, polovina_height - proj_height // 2, SCALE, proj_height))
         angle += ugol_mezhdu_luchami
 
       
@@ -141,13 +144,17 @@ class Drawing:
     def __init__(self, screen):
         self.sc = screen
         self.sc_map = world_map
+        self.textures = {'1': pygame.image.load('img/wall1.png').convert(),
+                         '2': pygame.image.load('img/wall2.png').convert(),
+                         'S': pygame.image.load('img/sky3.png').convert()
+                         }
 
     def background(self):
         pygame.draw.rect(self.sc, biruzovui, (0, 0, width, polovina_height))
         pygame.draw.rect(self.sc, temno_serui, (0, polovina_height, width, polovina_height))
 
     def world(self, player):
-        ray_casting(self.sc, player)
+        ray_casting(self.sc, player, self.textures)
         
 
 pygame.init()
