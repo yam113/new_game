@@ -96,6 +96,7 @@ class Player:
             self.angle -= 0.02
         if keys[pygame.K_RIGHT]:
             self.angle += 0.02
+        self.angle %= DOUBLE_PI
             
 
 class Sprites:
@@ -108,9 +109,19 @@ class Sprites:
             'pedestal': pygame.image.load('sprites/pedestal/0.png').convert_alpha(),
             'devil': [pygame.image.load(f'sprites/devil/{i}.png').convert_alpha() for i in range(8)]
         }            
+        #  Карта спрайтов
+        self.list_of_objects = [
+            SpriteObject(self.sprite_types['barrel'], True, (7.1, 2.1), 1.8, 0.4),
+            SpriteObject(self.sprite_types['barrel'], True, (5.9, 2.1), 1.8, 0.4),
+            SpriteObject(self.sprite_types['pedestal'], True, (8.8, 2.5), 1.6, 0.5),
+            SpriteObject(self.sprite_types['pedestal'], True, (8.8, 5.6), 1.6, 0.5),
+            SpriteObject(self.sprite_types['devil'], False, (7, 4), -0.2, 0.7),
+        ]
  
 
 class SpriteObject:
+        """В этом классе вычисляем положение спрайта и его проекционные характеристики"""
+
     def __init__(self, object, static, pos, shift, scale):
         """ object - тип
             static - является ли он статичной картинкой без угла обзора или нет
@@ -127,6 +138,73 @@ class SpriteObject:
         self.scale = scale
         #
         if not static:
+            # диапазоны углов для каждого спрайта, так как картинок 8, то на каджый спрайт приходится диапазон в
+            # 45 градусов
+            self.sprite_angles = [frozenset(range(i, i + 45)) for i in range(0, 360, 45)]
+            # так как это ключи в словаре, то для быстрого поиска будем использовать "замороженные" множества
+            # обычные множества не получится использовать из-за того, что это изменяемый тип данных и ключами словаря
+            # быть не могут
+            self.sprite_positions = {angle: pos for angle, pos in zip(self.sprite_angles, self.object)}
+     
+    def object_locate(self, player, walls):
+        """На вход идет экземпляр класса игрок и словарь с номерами лучей и расстоянииями до стен"""
+        # создадим 2 списка
+        # в 1 списке у нас будут фейковые лучи со значениями параметров от 1 настоящего луча
+        fake_walls0 = [walls[0] for i in range(FAKE_RAYS)]
+        # во втором списке будут значения от полседнего луча
+        fake_walls1 = [walls[-1] for i in range(FAKE_RAYS)]
+        # добавляем слева и справа эти списски к основному списску стен
+        fake_walls = fake_walls0 + walls + fake_walls1
+
+        dx, dy = self.x - player.x, self.y - player.y  # разницы координат между игроком и спрайтом
+        distance_to_sprite = math.sqrt(dx ** 2 + dy ** 2)  # вычисляем рассотяние до него
+
+        theta = math.atan2(dy, dx)  # углы
+        gamma = theta - player.angle  # углы
+        if dx > 0 and 180 <= math.degrees(player.angle) <= 360 or dx < 0 and dy < 0:  # условие, при котором угол
+            # гамма находится в нужном нам пределах для дальнейших вычислений(корректируем угол гамма прибавляем
+            # переменную 2-пи
+            gamma += DOUBLE_PI
+        # находим смещене спрайта относительно центрального луча
+        delta_rays = int(gamma / ugol_mezhdu_luchami)
+        current_ray = CENTER_RAY + delta_rays
+        # корректируем расстояние для спрайта, чтобы не было эффекта рыбьего глаза иначе спрайт будет не ровно
+        #
+        distance_to_sprite *= math.cos(HALF_FOV - current_ray * ugol_mezhdu_luchami)
+        # получаем возможность отображать нащ спрайт на фейковых лучах за пределами экрана, тем самым спрайт не будет
+        # исчезать а плавно будет уходить за экран
+        fake_ray = current_ray + FAKE_RAYS
+        # проверим попадает ли луч, на котором находится спрайт в наш диапазон лучей а так же если на том же луче
+        # есть припятсвие то выясним будет ли спрайт ближе к нам чем стена
+        if 0 <= fake_ray <= kol_luchei - 1 + 2 * FAKE_RAYS and distance_to_sprite < fake_walls[fake_ray][0]:
+            # рассчет проекционной высоты спрайта
+            proj_height = min(int(proj_coeff / distance_to_sprite * self.scale), 2 * height)
+            # внедряем коэффициент его масштабирования
+            half_proj_height = proj_height // 2
+            # механизм регулирования спрайта по высоте
+            shift = half_proj_height * self.shift
+            # алгоритм выбора правильного спрайта в зависимости от угла theta
+            if not self.static:
+                if theta < 0:
+                    # тут корректируем угол
+                    theta += DOUBLE_PI
+                theta = 360 - int(math.degrees(theta))
+                # проходимся по спискам с углами и как только угол попадает в один из диапазонов, то нужным
+                # спрайтом будет значение в словаре по ключу от этого угла
+                for angles in self.sprite_angles:
+                    if theta in angles:
+                        self.object = self.sprite_positions[angles]
+                        break
+            # вычисляем позицию спрайта относительно его луча, для этого совмещаем центр спрайта с его лучом
+            sprite_pos = (current_ray * SCALE - half_proj_height, polovina_height - half_proj_height + shift)
+            # определим положение по высоте, с учетом заданного сдвига и смасштабируем спрайт по размеру его проекции
+            sprite = pygame.transform.scale(self.object, (proj_height, proj_height))
+            # вернем кортеж параметров, аналогичный в функции ray_casting, если условие не выполнилось, то вернем
+            # ложное значение
+            return distance_to_sprite, sprite, sprite_pos
+        else:
+            return (False,)
+
             
 
             
@@ -202,6 +280,7 @@ class Drawing:
 pygame.init()
 screen = pygame.display.set_mode((width, height))
 
+sprites = Sprites() 
 drawing = Drawing(screen)
 player = Player()
 
@@ -212,5 +291,7 @@ while True:
     player.movement()
     screen.fill(chern) # вся поверхность в черный
     drawing.background(player.angle)
-    drawing.world(player)
+    walls = ray_casting(player, drawing.textures)  # список стен, получаемый из функции райкаст
+    drawing.world(walls + [obj.object_locate(player, walls) for obj in sprites.list_of_objects])  # отрисовка мира
     pygame.display.flip()
+    
